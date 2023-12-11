@@ -8,7 +8,7 @@ using UnityEngine.Rendering;
 
 namespace mattatz.TransformControl {
 
-	public class TransformControl : MonoBehaviour {
+	public class TransformController : MonoBehaviour {
 
 	    [System.Serializable]
 	    class TransformData {
