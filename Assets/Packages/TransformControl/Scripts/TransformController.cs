@@ -22,7 +22,7 @@ namespace TransformControl {
 	            rotation = r;
 	            scale = s;
 
-				matrix = Matrix4x4.TRS(p, r, s);
+	            matrix = Matrix4x4.TRS(p, r, s);
 	        }
 
 	        public TransformData(Transform tr) : this(tr.position, tr.rotation, tr.localScale) {}
@@ -57,6 +57,9 @@ namespace TransformControl {
 	        }
 	    }
 
+		protected Camera currentCamera;
+
+	    public Camera renderTargetCamera;
 	    public TransformMode mode = TransformMode.Translate;
 	    public bool global, useDistance;
         public float distance = 10f;
@@ -96,18 +99,42 @@ namespace TransformControl {
 	    #endregion
 
 	    void Awake() {
+		    renderTargetCamera = (renderTargetCamera == null) ? Camera.main : renderTargetCamera;
 	        cone = CreateCone(5, 0.1f, HANDLER_SIZE);
 	        cube = CreateCube(HANDLER_SIZE);
 
 	        GetCircumference(SPHERE_RESOLUTION, out circumX, out circumY, out circumZ);
 	    }
 
-        /*
+		void OnEnable()
+		{
+			RenderPipelineManager.beginCameraRendering += OnBeginCameraRendering;
+		}
+
+		void OnDisable()
+		{
+			RenderPipelineManager.beginCameraRendering -= OnBeginCameraRendering;
+		}
+
+		// Called automatically in the Universal Render Pipeline (URP) and the High Definition Render Pipeline (HDRP).
+		void OnBeginCameraRendering(ScriptableRenderContext context, Camera camera)
+		{
+			//
+			// NOTE:
+			// Camera.current returns null when calling it in OnRenderObject
+			// with the Universal Render Pipeline (URP) and the High Definition Render Pipeline (HDRP).
+			//
+			// References:
+			//  - https://zenn.dev/fuqunaga/articles/c29337f01658f4#onrenderobject()%E5%86%85%E3%81%A7camera.current%3D%3Dnull%E3%81%AB%E3%81%AA%E3%82%8B
+			//  - https://forum.unity.com/threads/camera-current-returns-null-when-calling-it-in-onwillrenderobject-with-universalrp.929880/
+			//
+			currentCamera = camera;
+		}
+
         // Usage: Call Control() method in Update() loop 
 	    void Update() {
             Control();
 	    }
-        */
 
         public void Control () {
 	        if (Input.GetMouseButtonDown(0)) {
@@ -148,14 +175,14 @@ namespace TransformControl {
             float scale = 1f;
             if(useDistance)
             {
-                var d = (Camera.main.transform.position - transform.position).magnitude;
+                var d = (renderTargetCamera.transform.position - transform.position).magnitude;
                 scale = d / distance;
             }
 			return Matrix4x4.TRS(transform.position, global ? Quaternion.identity : transform.rotation, Vector3.one * scale);
         }
 
 	    bool PickOrthogonal (Vector3 mouse) {
-	        var cam = Camera.main;
+	        var cam = renderTargetCamera;
 
 			var matrix = GetTranform();
 
@@ -192,7 +219,7 @@ namespace TransformControl {
 	    }
 
 	    bool PickSphere(Vector3 mouse) {
-	        var cam = Camera.main;
+	        var cam = renderTargetCamera;
 
 			var matrix = GetTranform();
 
@@ -237,8 +264,8 @@ namespace TransformControl {
 		bool GetStartProj (out Vector3 proj) {
 			proj = default(Vector3);
 
-			var plane = new Plane((Camera.main.transform.position - prev.position).normalized, prev.position);
-			var ray = Camera.main.ScreenPointToRay(start);
+			var plane = new Plane((renderTargetCamera.transform.position - prev.position).normalized, prev.position);
+			var ray = renderTargetCamera.ScreenPointToRay(start);
 			float distance;
 			if(plane.Raycast(ray, out distance)) {
 				var point = ray.GetPoint(distance);
@@ -275,8 +302,8 @@ namespace TransformControl {
 	    void Translate() {
 	        if (selected == TransformDirection.None) return;
 
-			var plane = new Plane((Camera.main.transform.position - prev.position).normalized, prev.position);
-			var ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+			var plane = new Plane((renderTargetCamera.transform.position - prev.position).normalized, prev.position);
+			var ray = renderTargetCamera.ScreenPointToRay(Input.mousePosition);
 			float distance;
 			if(plane.Raycast(ray, out distance)) {
 				var point = ray.GetPoint(distance);
@@ -305,7 +332,7 @@ namespace TransformControl {
 			var matrix = Matrix4x4.TRS(prev.position, global ? Quaternion.identity : prev.rotation,  Vector3.one);
 
 			var cur = Input.mousePosition.xy();
-			var cam = Camera.main;
+			var cam = renderTargetCamera;
 			var origin = cam.WorldToScreenPoint(matrix.MultiplyPoint(Vector3.zero)).xy();
 			var axis = cam.WorldToScreenPoint(matrix.MultiplyPoint(axes[selected])).xy();
 			var perp = (origin - axis).Perp().normalized;
@@ -320,8 +347,8 @@ namespace TransformControl {
 	    void Scale() {
 	        if (selected == TransformDirection.None) return;
 
-			var plane = new Plane((Camera.main.transform.position - transform.position).normalized, prev.position);
-			var ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+			var plane = new Plane((renderTargetCamera.transform.position - transform.position).normalized, prev.position);
+			var ray = renderTargetCamera.ScreenPointToRay(Input.mousePosition);
 			float distance;
 			if(plane.Raycast(ray, out distance)) {
 				var point = ray.GetPoint(distance);
@@ -354,7 +381,13 @@ namespace TransformControl {
 
 	    }
 
-	    void OnRenderObject() {
+	    void OnRenderObject() { 
+		    if (Camera.current != renderTargetCamera /* Built-in Render Pipeline */
+			&& currentCamera != renderTargetCamera /* Universal Render Pipeline (URP) and High Definition Render Pipeline (HDRP) */)
+			{
+				return;
+			}
+
 	        if (mode == TransformMode.None) return;
 
 	        GL.PushMatrix();
