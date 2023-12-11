@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace mattatz.TransformControl.Demo {
+namespace TransformControl.Demo {
 
 	public class TransformDisplay : MonoBehaviour {
 

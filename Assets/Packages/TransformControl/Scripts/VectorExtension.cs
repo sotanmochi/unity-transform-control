@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace mattatz.TransformControl {
+namespace TransformControl {
 
     public static class VectorExtension {
 

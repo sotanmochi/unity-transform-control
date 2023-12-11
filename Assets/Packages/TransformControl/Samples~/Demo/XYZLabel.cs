@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace mattatz.TransformControl.Demo {
+namespace TransformControl.Demo {
 
 	public class XYZLabel : MonoBehaviour {
 
