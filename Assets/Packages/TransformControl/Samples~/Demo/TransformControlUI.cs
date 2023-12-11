@@ -6,22 +6,22 @@ namespace mattatz.TransformControl.Demo {
 
 	public class TransformControlUI : MonoBehaviour {
 
-		[SerializeField] TransformControl control;
+		[SerializeField] TransformController controller;
 
         void Update() {
-            control.Control();
+            controller.Control();
         }
 
 		public void OnModeChanged(int index) {
 			switch(index) {
 			case 0:
-				control.mode = TransformControl.TransformMode.Translate;
+				controller.mode = TransformController.TransformMode.Translate;
 				break;
 			case 1:
-				control.mode = TransformControl.TransformMode.Rotate;
+				controller.mode = TransformController.TransformMode.Rotate;
 				break;
 			case 2:
-				control.mode = TransformControl.TransformMode.Scale;
+				controller.mode = TransformController.TransformMode.Scale;
 				break;
 			}
 		}
@@ -29,10 +29,10 @@ namespace mattatz.TransformControl.Demo {
 		public void OnCoordinateChanged(int index) {
 			switch(index) {
 			case 0:
-				control.global = false;
+				controller.global = false;
 				break;
 			case 1:
-				control.global = true;
+				controller.global = true;
 				break;
 			}
 		}
