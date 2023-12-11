@@ -1,0 +1,13 @@
+{
+    "name": "org.mattatz.unity-transform-control",
+    "displayName": "Transform Control",
+    "description": "Transform controller in Game View for Unity.",
+    "version": "1.0.0",
+    "license": "MIT",
+    "samples": [
+        {
+            "displayName": "Demo",
+            "path": "Samples~/Demo"
+        }
+    ]
+}
